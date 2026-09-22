@@ -1,0 +1,374 @@
+[
+  {
+    "id": "C001",
+    "name": "Priya Sharma",
+    "email": "priya.sharma@gmail.com",
+    "phone": "+91 98765 43210",
+    "address": "42, Lotus Colony, Andheri West, Mumbai - 400053",
+    "avatar": "PS",
+    "avatarColor": "bg-purple-500",
+    "totalRepairs": 4,
+    "currentDevice": "iPhone 15 Pro",
+    "status": "Active",
+    "joinDate": "2023-03-15",
+    "repairHistory": [
+      {
+        "id": "J2401",
+        "device": "iPhone 15 Pro",
+        "issue": "Screen Replacement",
+        "date": "2024-06-10",
+        "cost": 3200,
+        "status": "Delivered"
+      },
+      {
+        "id": "J2356",
+        "device": "MacBook Air M2",
+        "issue": "Battery Replacement",
+        "date": "2024-02-14",
+        "cost": 6500,
+        "status": "Delivered"
+      },
+      {
+        "id": "J2198",
+        "device": "Samsung Galaxy S22",
+        "issue": "Water Damage",
+        "date": "2023-10-05",
+        "cost": 4800,
+        "status": "Delivered"
+      },
+      {
+        "id": "J2034",
+        "device": "Dell XPS 15",
+        "issue": "Keyboard Repair",
+        "date": "2023-05-22",
+        "cost": 2100,
+        "status": "Delivered"
+      }
+    ],
+    "invoices": [
+      {
+        "id": "INV-2401",
+        "amount": 3200,
+        "date": "2024-06-12",
+        "status": "Paid"
+      },
+      {
+        "id": "INV-2356",
+        "amount": 6500,
+        "date": "2024-02-16",
+        "status": "Paid"
+      }
+    ],
+    "warranty": {
+      "status": "Active",
+      "expires": "2024-12-10",
+      "coverage": "Screen & Battery"
+    }
+  },
+  {
+    "id": "C002",
+    "name": "Arjun Mehta",
+    "email": "arjun.mehta@outlook.com",
+    "phone": "+91 87654 32109",
+    "address": "15, Sector 21, Vashi, Navi Mumbai - 400705",
+    "avatar": "AM",
+    "avatarColor": "bg-blue-500",
+    "totalRepairs": 2,
+    "currentDevice": "HP Envy Laptop",
+    "status": "Active",
+    "joinDate": "2023-08-20",
+    "repairHistory": [
+      {
+        "id": "J2398",
+        "device": "HP Envy Laptop",
+        "issue": "Motherboard Repair",
+        "date": "2024-06-01",
+        "cost": 8900,
+        "status": "Repairing"
+      },
+      {
+        "id": "J2287",
+        "device": "OnePlus 11",
+        "issue": "Charging Port",
+        "date": "2023-12-19",
+        "cost": 1200,
+        "status": "Delivered"
+      }
+    ],
+    "invoices": [
+      {
+        "id": "INV-2287",
+        "amount": 1200,
+        "date": "2023-12-21",
+        "status": "Paid"
+      }
+    ],
+    "warranty": {
+      "status": "None",
+      "expires": null,
+      "coverage": "No active warranty"
+    }
+  },
+  {
+    "id": "C003",
+    "name": "Sneha Patel",
+    "email": "sneha.patel@yahoo.com",
+    "phone": "+91 76543 21098",
+    "address": "8, Shyam Nagar, Borivali East, Mumbai - 400066",
+    "avatar": "SP",
+    "avatarColor": "bg-pink-500",
+    "totalRepairs": 6,
+    "currentDevice": "iPad Pro 12.9\"",
+    "status": "Active",
+    "joinDate": "2022-11-10",
+    "repairHistory": [
+      {
+        "id": "J2412",
+        "device": "iPad Pro 12.9\"",
+        "issue": "Digitizer Replacement",
+        "date": "2024-06-15",
+        "cost": 5600,
+        "status": "Ready"
+      },
+      {
+        "id": "J2380",
+        "device": "Apple Watch Series 8",
+        "issue": "Screen Crack",
+        "date": "2024-04-28",
+        "cost": 2800,
+        "status": "Delivered"
+      },
+      {
+        "id": "J2345",
+        "device": "iPhone 14 Plus",
+        "issue": "Camera Replacement",
+        "date": "2024-01-15",
+        "cost": 4200,
+        "status": "Delivered"
+      }
+    ],
+    "invoices": [
+      {
+        "id": "INV-2412",
+        "amount": 5600,
+        "date": "2024-06-17",
+        "status": "Pending"
+      },
+      {
+        "id": "INV-2380",
+        "amount": 2800,
+        "date": "2024-04-30",
+        "status": "Paid"
+      }
+    ],
+    "warranty": {
+      "status": "Active",
+      "expires": "2024-12-15",
+      "coverage": "Display Only"
+    }
+  },
+  {
+    "id": "C004",
+    "name": "Rohit Gupta",
+    "email": "rohit.gupta@gmail.com",
+    "phone": "+91 65432 10987",
+    "address": "27, MG Road, Thane West - 400601",
+    "avatar": "RG",
+    "avatarColor": "bg-green-500",
+    "totalRepairs": 1,
+    "currentDevice": "Canon Printer",
+    "status": "Active",
+    "joinDate": "2024-01-05",
+    "repairHistory": [
+      {
+        "id": "J2405",
+        "device": "Canon PIXMA G3010",
+        "issue": "Ink Head Clogged",
+        "date": "2024-06-08",
+        "cost": 1500,
+        "status": "Diagnosing"
+      }
+    ],
+    "invoices": [],
+    "warranty": {
+      "status": "None",
+      "expires": null,
+      "coverage": "No active warranty"
+    }
+  },
+  {
+    "id": "C005",
+    "name": "Kavya Nair",
+    "email": "kavya.nair@gmail.com",
+    "phone": "+91 54321 09876",
+    "address": "3, Palm Avenue, Juhu, Mumbai - 400049",
+    "avatar": "KN",
+    "avatarColor": "bg-orange-500",
+    "totalRepairs": 3,
+    "currentDevice": "Samsung Galaxy Tab",
+    "status": "Active",
+    "joinDate": "2023-06-12",
+    "repairHistory": [
+      {
+        "id": "J2390",
+        "device": "Samsung Galaxy Tab S8",
+        "issue": "Port Replacement",
+        "date": "2024-05-20",
+        "cost": 900,
+        "status": "Delivered"
+      },
+      {
+        "id": "J2302",
+        "device": "Dell Inspiron 15",
+        "issue": "SSD Upgrade",
+        "date": "2024-01-08",
+        "cost": 5500,
+        "status": "Delivered"
+      },
+      {
+        "id": "J2156",
+        "device": "Realme 9 Pro",
+        "issue": "Battery Swap",
+        "date": "2023-08-14",
+        "cost": 800,
+        "status": "Delivered"
+      }
+    ],
+    "invoices": [
+      {
+        "id": "INV-2390",
+        "amount": 900,
+        "date": "2024-05-22",
+        "status": "Paid"
+      }
+    ],
+    "warranty": {
+      "status": "Expired",
+      "expires": "2024-05-22",
+      "coverage": "Full Coverage"
+    }
+  },
+  {
+    "id": "C006",
+    "name": "Vikram Singh",
+    "email": "vikram.singh@hotmail.com",
+    "phone": "+91 43210 98765",
+    "address": "55, Defence Colony, Powai, Mumbai - 400076",
+    "avatar": "VS",
+    "avatarColor": "bg-indigo-500",
+    "totalRepairs": 5,
+    "currentDevice": "Lenovo ThinkPad",
+    "status": "VIP",
+    "joinDate": "2022-05-30",
+    "repairHistory": [
+      {
+        "id": "J2415",
+        "device": "Lenovo ThinkPad X1",
+        "issue": "Data Recovery",
+        "date": "2024-06-16",
+        "cost": 12000,
+        "status": "Received"
+      },
+      {
+        "id": "J2375",
+        "device": "Apple Watch Ultra",
+        "issue": "Battery Replacement",
+        "date": "2024-04-10",
+        "cost": 4500,
+        "status": "Delivered"
+      }
+    ],
+    "invoices": [
+      {
+        "id": "INV-2375",
+        "amount": 4500,
+        "date": "2024-04-12",
+        "status": "Paid"
+      }
+    ],
+    "warranty": {
+      "status": "Active",
+      "expires": "2025-06-16",
+      "coverage": "Full Coverage"
+    }
+  },
+  {
+    "id": "C007",
+    "name": "Ananya Reddy",
+    "email": "ananya.reddy@gmail.com",
+    "phone": "+91 32109 87654",
+    "address": "11, Lotus Park, Chembur, Mumbai - 400071",
+    "avatar": "AR",
+    "avatarColor": "bg-red-500",
+    "totalRepairs": 2,
+    "currentDevice": "Fitbit Charge 5",
+    "status": "Inactive",
+    "joinDate": "2023-09-22",
+    "repairHistory": [
+      {
+        "id": "J2201",
+        "device": "Fitbit Charge 5",
+        "issue": "Strap & Sensor",
+        "date": "2023-11-10",
+        "cost": 1800,
+        "status": "Delivered"
+      },
+      {
+        "id": "J2167",
+        "device": "iPad Air",
+        "issue": "Glass Replacement",
+        "date": "2023-10-01",
+        "cost": 3400,
+        "status": "Delivered"
+      }
+    ],
+    "invoices": [
+      {
+        "id": "INV-2201",
+        "amount": 1800,
+        "date": "2023-11-12",
+        "status": "Paid"
+      },
+      {
+        "id": "INV-2167",
+        "amount": 3400,
+        "date": "2023-10-03",
+        "status": "Paid"
+      }
+    ],
+    "warranty": {
+      "status": "Expired",
+      "expires": "2024-05-12",
+      "coverage": "Partial"
+    }
+  },
+  {
+    "id": "C008",
+    "name": "Kiran Joshi",
+    "email": "kiran.joshi@gmail.com",
+    "phone": "+91 21098 76543",
+    "address": "22, Shivaji Park, Dadar, Mumbai - 400028",
+    "avatar": "KJ",
+    "avatarColor": "bg-teal-500",
+    "totalRepairs": 3,
+    "currentDevice": "Asus ROG Laptop",
+    "status": "Active",
+    "joinDate": "2023-12-01",
+    "repairHistory": [
+      {
+        "id": "J2408",
+        "device": "Asus ROG Zephyrus",
+        "issue": "GPU Replacement",
+        "date": "2024-06-10",
+        "cost": 18500,
+        "status": "Waiting Parts"
+      }
+    ],
+    "invoices": [],
+    "warranty": {
+      "status": "Active",
+      "expires": "2024-12-10",
+      "coverage": "Hardware Only"
+    }
+  }
+]

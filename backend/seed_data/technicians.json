@@ -1,0 +1,182 @@
+[
+  {
+    "id": "T001",
+    "name": "Raj Kumar",
+    "email": "raj.kumar@techfix.in",
+    "phone": "+91 98001 12345",
+    "avatar": "RK",
+    "avatarColor": "bg-blue-600",
+    "specialization": [
+      "Mobile Phones",
+      "Tablets",
+      "Smart Watches"
+    ],
+    "experience": "6 years",
+    "currentJobs": 3,
+    "completedJobs": 847,
+    "efficiency": 96,
+    "availability": "Available",
+    "rating": 4.9,
+    "skills": [
+      "iOS Repair",
+      "Android Repair",
+      "Micro-soldering",
+      "Data Recovery"
+    ],
+    "shift": "Morning (9AM - 6PM)",
+    "joinDate": "2018-03-10",
+    "certifications": [
+      "Apple Certified Technician",
+      "Samsung ASC"
+    ]
+  },
+  {
+    "id": "T002",
+    "name": "Sanjay Verma",
+    "email": "sanjay.verma@techfix.in",
+    "phone": "+91 87001 23456",
+    "avatar": "SV",
+    "avatarColor": "bg-purple-600",
+    "specialization": [
+      "Laptops",
+      "Desktop Computers"
+    ],
+    "experience": "8 years",
+    "currentJobs": 4,
+    "completedJobs": 1204,
+    "efficiency": 94,
+    "availability": "Busy",
+    "rating": 4.8,
+    "skills": [
+      "Component-level Repair",
+      "BGA Rework",
+      "Data Recovery",
+      "GPU Repair"
+    ],
+    "shift": "Morning (9AM - 6PM)",
+    "joinDate": "2016-07-15",
+    "certifications": [
+      "CompTIA A+",
+      "HP ASP",
+      "Dell Certified Technician"
+    ]
+  },
+  {
+    "id": "T003",
+    "name": "Meera Singh",
+    "email": "meera.singh@techfix.in",
+    "phone": "+91 76001 34567",
+    "avatar": "MS",
+    "avatarColor": "bg-pink-600",
+    "specialization": [
+      "Tablets",
+      "Laptops",
+      "Smart Watches"
+    ],
+    "experience": "4 years",
+    "currentJobs": 2,
+    "completedJobs": 523,
+    "efficiency": 92,
+    "availability": "Available",
+    "rating": 4.7,
+    "skills": [
+      "Screen Replacement",
+      "Battery Replacement",
+      "iOS Diagnostics"
+    ],
+    "shift": "Evening (12PM - 9PM)",
+    "joinDate": "2020-01-20",
+    "certifications": [
+      "Apple Certified Technician"
+    ]
+  },
+  {
+    "id": "T004",
+    "name": "Deepika Rao",
+    "email": "deepika.rao@techfix.in",
+    "phone": "+91 65001 45678",
+    "avatar": "DR",
+    "avatarColor": "bg-teal-600",
+    "specialization": [
+      "Printers",
+      "Desktop Computers",
+      "Accessories"
+    ],
+    "experience": "5 years",
+    "currentJobs": 1,
+    "completedJobs": 612,
+    "efficiency": 89,
+    "availability": "Available",
+    "rating": 4.6,
+    "skills": [
+      "Printer Repair",
+      "Network Setup",
+      "PC Assembly",
+      "Peripheral Repair"
+    ],
+    "shift": "Morning (9AM - 6PM)",
+    "joinDate": "2019-05-05",
+    "certifications": [
+      "CompTIA A+",
+      "Canon Certified"
+    ]
+  },
+  {
+    "id": "T005",
+    "name": "Aman Sheikh",
+    "email": "aman.sheikh@techfix.in",
+    "phone": "+91 54001 56789",
+    "avatar": "AS",
+    "avatarColor": "bg-orange-600",
+    "specialization": [
+      "Mobile Phones",
+      "Smart Watches"
+    ],
+    "experience": "3 years",
+    "currentJobs": 2,
+    "completedJobs": 318,
+    "efficiency": 87,
+    "availability": "Available",
+    "rating": 4.5,
+    "skills": [
+      "Android Repair",
+      "Samsung Specialist",
+      "Water Damage",
+      "Screen Replacement"
+    ],
+    "shift": "Evening (12PM - 9PM)",
+    "joinDate": "2021-09-01",
+    "certifications": [
+      "Samsung ASC",
+      "OnePlus Certified"
+    ]
+  },
+  {
+    "id": "T006",
+    "name": "Pooja Krishnan",
+    "email": "pooja.krishnan@techfix.in",
+    "phone": "+91 43001 67890",
+    "avatar": "PK",
+    "avatarColor": "bg-indigo-600",
+    "specialization": [
+      "Laptops",
+      "Mobile Phones"
+    ],
+    "experience": "2 years",
+    "currentJobs": 1,
+    "completedJobs": 187,
+    "efficiency": 85,
+    "availability": "On Leave",
+    "rating": 4.4,
+    "skills": [
+      "Laptop Repair",
+      "iOS Repair",
+      "Chip-level Diagnostics"
+    ],
+    "shift": "Morning (9AM - 6PM)",
+    "joinDate": "2022-04-15",
+    "certifications": [
+      "CompTIA A+"
+    ]
+  }
+]
