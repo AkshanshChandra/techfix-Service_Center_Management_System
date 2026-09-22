@@ -3,11 +3,14 @@ import { motion } from 'framer-motion';
 import { Search, Filter, Package, AlertTriangle, Plus, TrendingDown } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import AsyncState from '../components/AsyncState';
+import Modal from '../components/Modal';
 import { categories } from '../data/constants';
 import { formatCurrency } from '../utils/helpers';
 import { api } from '../api/client';
 import { useApi } from '../hooks/useApi';
 import { useOutletContext } from 'react-router-dom';
+
+const emptyForm = { name: '', category: 'Screens', sku: '', stock: '', minStock: '', supplier: '', price: '' };
 
 export default function Inventory() {
   const { addToast } = useOutletContext();
@@ -15,6 +18,9 @@ export default function Inventory() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
 
   const statuses = ['All', 'Available', 'Low Stock', 'Out of Stock'];
 
@@ -32,6 +38,49 @@ export default function Inventory() {
   const lowStockCount = inventory.filter(i => i.status === 'Low Stock').length;
   const outOfStockCount = inventory.filter(i => i.status === 'Out of Stock').length;
 
+  const setField = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  const handleAdd = async () => {
+    if (!form.name || !form.category || !form.sku) {
+      addToast('Part name, category and SKU are required', 'error');
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.inventory.create({
+        ...form,
+        stock: Number(form.stock) || 0,
+        minStock: Number(form.minStock) || 0,
+        price: Number(form.price) || 0,
+      });
+      setShowAdd(false);
+      setForm(emptyForm);
+      reload();
+      addToast('Part added to inventory', 'success');
+    } catch (err) {
+      addToast(err.message, 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const reorder = async (item) => {
+    const target = item.minStock * 3;
+    if (item.stock >= target) {
+      addToast(`${item.name} is already well stocked`, 'info');
+      return;
+    }
+    try {
+      await api.inventory.adjustStock(item.id, target - item.stock);
+      reload();
+      addToast(`Restocked ${item.name} to ${target} units`, 'success');
+    } catch (err) {
+      addToast(err.message, 'error');
+    }
+  };
+
+  const inputClass = 'w-full px-3 py-2.5 rounded-xl border border-secondary-200 dark:border-secondary-700 bg-secondary-50 dark:bg-secondary-800 text-sm text-secondary-700 dark:text-secondary-300 focus:outline-none focus:ring-2 focus:ring-primary-500/30';
+
   if (loading || error) return <AsyncState loading={loading} error={error} onRetry={reload} />;
 
   return (
@@ -43,7 +92,7 @@ export default function Inventory() {
           <p className="text-sm text-secondary-500 mt-0.5">{inventory.length} parts catalogued</p>
         </div>
         <button
-          onClick={() => addToast('Part added to inventory', 'success')}
+          onClick={() => setShowAdd(true)}
           className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary-600 to-primary-700 text-white text-sm font-semibold rounded-xl hover:shadow-glow transition-all duration-200 hover:-translate-y-0.5"
         >
           <Plus className="w-4 h-4" /> Add Part
@@ -169,7 +218,7 @@ export default function Inventory() {
                     <td className="px-4 py-3.5"><StatusBadge status={item.status} size="xs" /></td>
                     <td className="px-4 py-3.5">
                       <button
-                        onClick={() => addToast(`Restock order placed for ${item.name}`, 'success')}
+                        onClick={() => reorder(item)}
                         className="text-xs font-medium text-primary-600 dark:text-primary-400 hover:underline whitespace-nowrap"
                       >
                         Reorder
@@ -188,6 +237,58 @@ export default function Inventory() {
           </div>
         )}
       </motion.div>
+
+      {/* Add Part Modal */}
+      <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title="Add New Part" size="lg">
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-secondary-700 dark:text-secondary-300 mb-1.5">Part Name</label>
+            <input value={form.name} onChange={setField('name')} placeholder="iPhone 15 Pro OLED Display Assembly" className={inputClass} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-secondary-700 dark:text-secondary-300 mb-1.5">Category</label>
+              <select value={form.category} onChange={setField('category')} className={inputClass}>
+                {categories.filter(c => c !== 'All').map(c => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-secondary-700 dark:text-secondary-300 mb-1.5">SKU</label>
+              <input value={form.sku} onChange={setField('sku')} placeholder="SCR-IP15P-023" className={inputClass} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-secondary-700 dark:text-secondary-300 mb-1.5">Stock Quantity</label>
+              <input type="number" value={form.stock} onChange={setField('stock')} placeholder="0" className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-secondary-700 dark:text-secondary-300 mb-1.5">Minimum Stock</label>
+              <input type="number" value={form.minStock} onChange={setField('minStock')} placeholder="0" className={inputClass} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-secondary-700 dark:text-secondary-300 mb-1.5">Supplier</label>
+              <input value={form.supplier} onChange={setField('supplier')} placeholder="Apple Parts India" className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-secondary-700 dark:text-secondary-300 mb-1.5">Price (₹)</label>
+              <input type="number" value={form.price} onChange={setField('price')} placeholder="0" className={inputClass} />
+            </div>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button onClick={() => setShowAdd(false)} className="flex-1 py-2.5 border border-secondary-200 dark:border-secondary-700 text-secondary-700 dark:text-secondary-300 text-sm font-medium rounded-xl hover:bg-secondary-50 transition-colors">Cancel</button>
+            <button
+              onClick={handleAdd}
+              disabled={saving}
+              className="flex-1 py-2.5 bg-gradient-to-r from-primary-600 to-primary-700 text-white text-sm font-semibold rounded-xl hover:shadow-glow transition-all disabled:opacity-60"
+            >
+              {saving ? 'Adding...' : 'Add Part'}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -3,7 +3,9 @@ import { motion } from 'framer-motion';
 import { Search, Download, Printer, FileText, Filter } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import AsyncState from '../components/AsyncState';
+import Modal from '../components/Modal';
 import { formatCurrency, formatDate } from '../utils/helpers';
+import { downloadInvoicePdf, printInvoicePdf } from '../utils/invoicePdf';
 import { api } from '../api/client';
 import { useApi } from '../hooks/useApi';
 import { useOutletContext } from 'react-router-dom';
@@ -13,8 +15,13 @@ const paymentMethodIcons = { UPI: '📱', Cash: '💵', Card: '💳', Pending: '
 export default function Invoices() {
   const { addToast } = useOutletContext();
   const { data, loading, error, reload } = useApi(() => api.invoices.list(), []);
+  const { data: jobs } = useApi(() => api.repairJobs.list(), []);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [showCreate, setShowCreate] = useState(false);
+  const [jobId, setJobId] = useState('');
+  const [amount, setAmount] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const statuses = ['All', 'Paid', 'Pending', 'Overdue'];
 
@@ -40,6 +47,46 @@ export default function Invoices() {
     }
   };
 
+  const invoicedJobIds = new Set(invoices.map(i => i.jobId));
+  const invoiceableJobs = (jobs || []).filter(j => !invoicedJobIds.has(j.id));
+
+  const openCreate = () => {
+    setJobId('');
+    setAmount('');
+    setShowCreate(true);
+  };
+
+  const selectJob = (id) => {
+    setJobId(id);
+    const job = invoiceableJobs.find(j => j.id === id);
+    setAmount(job ? String(job.cost) : '');
+  };
+
+  const handleCreate = async () => {
+    const job = invoiceableJobs.find(j => j.id === jobId);
+    if (!job || !amount) {
+      addToast('Select a repair job and enter an amount', 'error');
+      return;
+    }
+    setSaving(true);
+    try {
+      const invoice = await api.invoices.create({
+        jobId: job.id,
+        customerId: job.customerId,
+        amount: Number(amount),
+      });
+      setShowCreate(false);
+      reload();
+      addToast(`Invoice ${invoice.id} created`, 'success');
+    } catch (err) {
+      addToast(err.message, 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const inputClass = 'w-full px-3 py-2.5 rounded-xl border border-secondary-200 dark:border-secondary-700 bg-secondary-50 dark:bg-secondary-800 text-sm text-secondary-700 dark:text-secondary-300 focus:outline-none focus:ring-2 focus:ring-primary-500/30';
+
   if (loading || error) return <AsyncState loading={loading} error={error} onRetry={reload} />;
 
   return (
@@ -51,7 +98,7 @@ export default function Invoices() {
           <p className="text-sm text-secondary-500 mt-0.5">{invoices.length} invoices total</p>
         </div>
         <button
-          onClick={() => addToast('Invoice created', 'success')}
+          onClick={openCreate}
           className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-primary-600 to-primary-700 text-white text-sm font-semibold rounded-xl hover:shadow-glow transition-all duration-200 hover:-translate-y-0.5"
         >
           <FileText className="w-4 h-4" /> Create Invoice
@@ -171,13 +218,15 @@ export default function Invoices() {
                 </button>
               )}
               <button
-                onClick={() => addToast('Invoice downloaded (demo)', 'info')}
+                onClick={() => { downloadInvoicePdf(inv); addToast('Invoice PDF downloaded', 'success'); }}
                 className="flex-1 flex items-center justify-center gap-1.5 py-2 border border-secondary-200 dark:border-secondary-700 text-secondary-600 dark:text-secondary-400 text-xs font-medium rounded-xl hover:bg-secondary-50 dark:hover:bg-secondary-700/50 transition-colors"
               >
                 <Download className="w-3.5 h-3.5" /> Download PDF
               </button>
               <button
-                onClick={() => addToast('Sending to printer...', 'info')}
+                onClick={() => {
+                  if (!printInvoicePdf(inv)) addToast('Allow pop-ups for this site to print', 'error');
+                }}
                 className="flex-1 flex items-center justify-center gap-1.5 py-2 border border-secondary-200 dark:border-secondary-700 text-secondary-600 dark:text-secondary-400 text-xs font-medium rounded-xl hover:bg-secondary-50 dark:hover:bg-secondary-700/50 transition-colors"
               >
                 <Printer className="w-3.5 h-3.5" /> Print
@@ -193,6 +242,39 @@ export default function Invoices() {
           <p className="font-medium">No invoices found</p>
         </div>
       )}
+
+      {/* Create Invoice Modal */}
+      <Modal isOpen={showCreate} onClose={() => setShowCreate(false)} title="Create Invoice">
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-secondary-700 dark:text-secondary-300 mb-1.5">Repair Job</label>
+            <select value={jobId} onChange={e => selectJob(e.target.value)} className={inputClass}>
+              <option value="">Select a repair job</option>
+              {invoiceableJobs.map(j => (
+                <option key={j.id} value={j.id}>{j.id} — {j.customerName} — {j.device}</option>
+              ))}
+            </select>
+            {invoiceableJobs.length === 0 && (
+              <p className="text-xs text-secondary-400 mt-1.5">Every repair job already has an invoice.</p>
+            )}
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-secondary-700 dark:text-secondary-300 mb-1.5">Amount (₹)</label>
+            <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0" className={inputClass} />
+            <p className="text-xs text-secondary-400 mt-1.5">18% GST is added automatically.</p>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button onClick={() => setShowCreate(false)} className="flex-1 py-2.5 border border-secondary-200 dark:border-secondary-700 text-secondary-700 dark:text-secondary-300 text-sm font-medium rounded-xl hover:bg-secondary-50 transition-colors">Cancel</button>
+            <button
+              onClick={handleCreate}
+              disabled={saving || !jobId}
+              className="flex-1 py-2.5 bg-gradient-to-r from-primary-600 to-primary-700 text-white text-sm font-semibold rounded-xl hover:shadow-glow transition-all disabled:opacity-60"
+            >
+              {saving ? 'Creating...' : 'Create Invoice'}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

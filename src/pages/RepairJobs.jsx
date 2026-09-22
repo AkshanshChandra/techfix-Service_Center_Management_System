@@ -9,7 +9,7 @@ import { useApi } from '../hooks/useApi';
 import Modal from '../components/Modal';
 
 const emptyForm = {
-  customerId: '', technicianId: '', device: '', issue: '',
+  customerId: '', deviceId: '', technicianId: '', issue: '',
   priority: 'Medium', cost: '', estimatedDelivery: '',
 };
 
@@ -19,6 +19,7 @@ export default function RepairJobs() {
   const { data: jobs, loading, error, reload, setData } = useApi(() => api.repairJobs.list(), []);
   const { data: customers } = useApi(() => api.customers.list(), []);
   const { data: technicians } = useApi(() => api.technicians.list(), []);
+  const { data: devices } = useApi(() => api.devices.list(), []);
 
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -27,6 +28,10 @@ export default function RepairJobs() {
   const [dragOverCol, setDragOverCol] = useState(null);
 
   const setField = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  const selectCustomer = (e) => setForm((f) => ({ ...f, customerId: e.target.value, deviceId: '' }));
+
+  const customerDevices = (devices || []).filter((d) => d.customerId === form.customerId);
 
   const handleDrop = async (e, targetStatus) => {
     e.preventDefault();
@@ -50,16 +55,25 @@ export default function RepairJobs() {
   };
 
   const handleCreate = async () => {
-    if (!form.customerId || !form.device || !form.issue) {
+    const device = customerDevices.find((d) => d.id === form.deviceId);
+    if (!form.customerId || !device || !form.issue) {
       addToast('Customer, device and problem description are required', 'error');
       return;
     }
     setSaving(true);
     try {
       await api.repairJobs.create({
-        ...form,
-        cost: Number(form.cost) || 0,
+        customerId: form.customerId,
         technicianId: form.technicianId || null,
+        issue: form.issue,
+        priority: form.priority,
+        cost: Number(form.cost) || 0,
+        estimatedDelivery: form.estimatedDelivery,
+        device: device.name,
+        category: device.category,
+        brand: device.brand,
+        model: device.model,
+        serial: device.serial,
       });
       setShowAdd(false);
       setForm(emptyForm);
@@ -238,7 +252,7 @@ export default function RepairJobs() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-secondary-700 dark:text-secondary-300 mb-1.5">Customer</label>
-              <select value={form.customerId} onChange={setField('customerId')} className={inputClass}>
+              <select value={form.customerId} onChange={selectCustomer} className={inputClass}>
                 <option value="">Select a customer</option>
                 {(customers || []).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
@@ -253,8 +267,25 @@ export default function RepairJobs() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-secondary-700 dark:text-secondary-300 mb-1.5">Device Name</label>
-            <input value={form.device} onChange={setField('device')} placeholder="iPhone 15 Pro / MacBook Air / Dell Laptop..." className={inputClass} />
+            <label className="block text-xs font-semibold text-secondary-700 dark:text-secondary-300 mb-1.5">Device</label>
+            <select
+              value={form.deviceId}
+              onChange={setField('deviceId')}
+              disabled={!form.customerId}
+              className={`${inputClass} disabled:opacity-60`}
+            >
+              <option value="">
+                {!form.customerId ? 'Select a customer first' : customerDevices.length === 0 ? 'No devices registered for this customer' : 'Select a device'}
+              </option>
+              {customerDevices.map(d => (
+                <option key={d.id} value={d.id}>{d.name} — {d.serial}</option>
+              ))}
+            </select>
+            {form.customerId && customerDevices.length === 0 && (
+              <p className="text-xs text-secondary-400 mt-1.5">
+                This customer has no registered devices. Register one on the Devices page first.
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-xs font-semibold text-secondary-700 dark:text-secondary-300 mb-1.5">Problem Description</label>
@@ -282,7 +313,7 @@ export default function RepairJobs() {
             <button onClick={() => setShowAdd(false)} className="flex-1 py-2.5 border border-secondary-200 dark:border-secondary-700 text-secondary-700 dark:text-secondary-300 text-sm font-medium rounded-xl hover:bg-secondary-50 transition-colors">Cancel</button>
             <button
               onClick={handleCreate}
-              disabled={saving}
+              disabled={saving || !form.deviceId}
               className="flex-1 py-2.5 bg-gradient-to-r from-primary-600 to-primary-700 text-white text-sm font-semibold rounded-xl hover:shadow-glow transition-all disabled:opacity-60"
             >
               {saving ? 'Creating...' : 'Create Job'}

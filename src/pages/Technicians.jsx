@@ -1,15 +1,63 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Star, Briefcase, CheckCircle, Zap, Mail, Phone, Clock } from 'lucide-react';
+import { Star, Briefcase, CheckCircle, Zap, Mail, Clock } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import AsyncState from '../components/AsyncState';
+import Modal from '../components/Modal';
 import { api } from '../api/client';
 import { useApi } from '../hooks/useApi';
 import { useOutletContext } from 'react-router-dom';
+
+const SPECIALIZATIONS = ['Mobile Phones', 'Laptops', 'Desktop Computers', 'Printers', 'Tablets', 'Smart Watches', 'Accessories'];
+const SHIFTS = ['Morning (9AM - 6PM)', 'Evening (12PM - 9PM)'];
+
+const emptyForm = {
+  name: '', email: '', phone: '', specialization: [], experience: '',
+  shift: SHIFTS[0], skills: '', certifications: '',
+};
 
 export default function Technicians() {
   const { addToast } = useOutletContext();
   const { data, loading, error, reload } = useApi(() => api.technicians.list(), []);
   const technicians = data || [];
+  const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
+
+  const setField = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+
+  const toggleSpecialization = (s) => setForm((f) => ({
+    ...f,
+    specialization: f.specialization.includes(s)
+      ? f.specialization.filter((x) => x !== s)
+      : [...f.specialization, s],
+  }));
+
+  const handleAdd = async () => {
+    if (!form.name || !form.email || !form.phone) {
+      addToast('Name, email and phone are required', 'error');
+      return;
+    }
+    setSaving(true);
+    try {
+      await api.technicians.create({
+        ...form,
+        skills: form.skills.split(',').map((s) => s.trim()).filter(Boolean),
+        certifications: form.certifications.split(',').map((s) => s.trim()).filter(Boolean),
+        joinDate: new Date().toISOString().slice(0, 10),
+      });
+      setShowAdd(false);
+      setForm(emptyForm);
+      reload();
+      addToast('Technician added successfully', 'success');
+    } catch (err) {
+      addToast(err.message, 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const inputClass = 'w-full px-3 py-2.5 rounded-xl border border-secondary-200 dark:border-secondary-700 bg-secondary-50 dark:bg-secondary-800 text-sm text-secondary-700 dark:text-secondary-300 focus:outline-none focus:ring-2 focus:ring-primary-500/30';
 
   if (loading || error) return <AsyncState loading={loading} error={error} onRetry={reload} />;
 
@@ -22,7 +70,7 @@ export default function Technicians() {
           <p className="text-sm text-secondary-500 mt-0.5">{technicians.length} service technicians</p>
         </div>
         <button
-          onClick={() => addToast('Technician registration opened', 'info')}
+          onClick={() => setShowAdd(true)}
           className="px-4 py-2.5 bg-gradient-to-r from-primary-600 to-primary-700 text-white text-sm font-semibold rounded-xl hover:shadow-glow transition-all duration-200 hover:-translate-y-0.5"
         >
           + Add Technician
@@ -150,6 +198,71 @@ export default function Technicians() {
           </motion.div>
         ))}
       </div>
+
+      {/* Add Technician Modal */}
+      <Modal isOpen={showAdd} onClose={() => setShowAdd(false)} title="Add New Technician" size="lg">
+        <div className="p-6 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-secondary-700 dark:text-secondary-300 mb-1.5">Full Name</label>
+              <input value={form.name} onChange={setField('name')} placeholder="Rahul Sharma" className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-secondary-700 dark:text-secondary-300 mb-1.5">Experience</label>
+              <input value={form.experience} onChange={setField('experience')} placeholder="3 years" className={inputClass} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-secondary-700 dark:text-secondary-300 mb-1.5">Email</label>
+              <input type="email" value={form.email} onChange={setField('email')} placeholder="rahul.sharma@techfix.in" className={inputClass} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-secondary-700 dark:text-secondary-300 mb-1.5">Phone</label>
+              <input type="tel" value={form.phone} onChange={setField('phone')} placeholder="+91 98765 43210" className={inputClass} />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-secondary-700 dark:text-secondary-300 mb-1.5">Specialization</label>
+            <div className="flex flex-wrap gap-2">
+              {SPECIALIZATIONS.map(s => (
+                <button
+                  type="button"
+                  key={s}
+                  onClick={() => toggleSpecialization(s)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${form.specialization.includes(s) ? 'bg-primary-600 text-white' : 'bg-secondary-50 dark:bg-secondary-800 border border-secondary-200 dark:border-secondary-700 text-secondary-600 dark:text-secondary-400'}`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-secondary-700 dark:text-secondary-300 mb-1.5">Shift</label>
+            <select value={form.shift} onChange={setField('shift')} className={inputClass}>
+              {SHIFTS.map(s => <option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-secondary-700 dark:text-secondary-300 mb-1.5">Skills (comma separated)</label>
+            <input value={form.skills} onChange={setField('skills')} placeholder="iOS Repair, Micro-soldering, Data Recovery" className={inputClass} />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-secondary-700 dark:text-secondary-300 mb-1.5">Certifications (comma separated)</label>
+            <input value={form.certifications} onChange={setField('certifications')} placeholder="Apple Certified Technician" className={inputClass} />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button onClick={() => setShowAdd(false)} className="flex-1 py-2.5 border border-secondary-200 dark:border-secondary-700 text-secondary-700 dark:text-secondary-300 text-sm font-medium rounded-xl hover:bg-secondary-50 transition-colors">Cancel</button>
+            <button
+              onClick={handleAdd}
+              disabled={saving}
+              className="flex-1 py-2.5 bg-gradient-to-r from-primary-600 to-primary-700 text-white text-sm font-semibold rounded-xl hover:shadow-glow transition-all disabled:opacity-60"
+            >
+              {saving ? 'Adding...' : 'Add Technician'}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
