@@ -29,6 +29,30 @@ CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 
 A local `mongodb://localhost:27017` works too if you'd rather develop offline.
 
+## Connect Cashfree (online invoice payments)
+
+1. Create a [Cashfree](https://www.cashfree.com/) account and open **Developers → API Keys** in
+   the dashboard. Use the **Test/Sandbox** App ID and Secret Key to start — switch to production
+   keys only when you're ready to take real payments.
+2. Add them to `backend/.env`:
+
+```
+CASHFREE_APP_ID=your_app_id
+CASHFREE_SECRET_KEY=your_secret_key
+CASHFREE_ENV=sandbox
+FRONTEND_URL=http://localhost:5173
+```
+
+3. (Optional, for production) In the Cashfree dashboard, set a webhook URL under
+   **Developers → Webhooks** pointing at `https://<your-public-domain>/api/webhooks/cashfree`.
+   The app doesn't strictly need this to work: the frontend polls Cashfree directly every 12s
+   for any invoice with an active payment link, so payments are reflected in the portal even
+   without a public webhook endpoint (useful for pure `localhost` development). The webhook just
+   makes that update near-instant once you have a real deployment.
+
+Without these two variables set, "Send Payment Link" fails with a clear
+`Cashfree credentials are not configured on the server` error instead of a silent failure.
+
 ## Load the sample data
 
 Replaces every collection with the dataset in `seed_data/`:
@@ -66,7 +90,10 @@ Then start the frontend in a second terminal (`npm run dev` from the project roo
 | GET | `/api/inventory/low-stock` | Parts at or below their minimum |
 | PATCH | `/api/inventory/{id}/stock` | Consume or restock (`{"delta": -2}`) |
 | GET/POST | `/api/invoices` | List (`search`, `status`, `customerId`) / create |
-| GET/PUT/DELETE | `/api/invoices/{id}` | Single invoice |
+| GET/PUT/DELETE | `/api/invoices/{id}` | Single invoice — `PUT status: "Paid"` is the cash-payment path |
+| POST | `/api/invoices/{id}/payment-link` | Create (or reuse) a Cashfree link and email it to the customer |
+| POST | `/api/invoices/{id}/payment-link/sync` | Re-check a link's status against Cashfree and apply it |
+| POST | `/api/webhooks/cashfree` | Cashfree's payment-notification callback (signature-verified) |
 | GET | `/api/dashboard/stats` | Dashboard counters, breakdowns, alerts |
 | GET | `/api/reports/summary` | Monthly revenue and technician performance |
 
@@ -88,3 +115,19 @@ Some writes span collections:
 - Stock adjustments recompute `Available` / `Low Stock` / `Out of Stock` and refuse to oversell.
 
 GST is fixed at 18% and calculated server-side, so invoice totals can't drift from the frontend.
+
+## Online payments (Cashfree)
+
+Each invoice can be paid two ways:
+
+- **Cash** — `PUT /api/invoices/{id}` with `status: "Paid"`. If a Cashfree link was already sent
+  for that invoice, it's cancelled automatically so the customer can't pay twice.
+- **Online** — `POST /api/invoices/{id}/payment-link` creates a Cashfree Payment Link and has
+  Cashfree email it to the customer directly (no SMTP setup needed on this side). The invoice
+  stores `paymentLinkId`/`paymentLinkUrl`/`paymentLinkStatus` while it's outstanding.
+
+Either the webhook or the frontend's polling can report a completed payment, but neither is
+trusted at face value — both just trigger `_sync_invoice_payment`, which calls Cashfree's
+"fetch payment link" API directly and applies whatever it reports. That keeps the app correct
+even if a webhook payload's shape changes across Cashfree API versions, and means the webhook is
+an optimization (faster updates), not a dependency (the app works without one being reachable).

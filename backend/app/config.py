@@ -8,9 +8,19 @@ class Settings(BaseSettings):
     database_name: str = "techfix"
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
+    # Cashfree Payment Links — see backend/README.md for where to get these.
+    cashfree_app_id: str = ""
+    cashfree_secret_key: str = ""
+    cashfree_env: str = "sandbox"  # "sandbox" or "production"
+    frontend_url: str = "http://localhost:5173"
+
     @property
     def allowed_origins(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def cashfree_base_url(self) -> str:
+        return "https://sandbox.cashfree.com/pg" if self.cashfree_env == "sandbox" else "https://api.cashfree.com/pg"
 
 
 settings = Settings()

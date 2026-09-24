@@ -3,6 +3,7 @@ from datetime import date, timedelta
 from fastapi import APIRouter, HTTPException, Query, status
 from pymongo import ReturnDocument
 
+from .. import cashfree
 from ..database import CUSTOMERS, INVOICES, REPAIR_JOBS, get_db, serialize
 from ..models.invoice import TAX_RATE, Invoice, InvoiceCreate, InvoiceUpdate
 
@@ -77,17 +78,30 @@ async def update_invoice(invoice_id: str, payload: InvoiceUpdate):
         changes["total"] = round(changes["amount"] + changes["tax"], 2)
 
     db = get_db()
+    existing = await db[INVOICES].find_one({"_id": invoice_id})
+    if existing is None:
+        raise HTTPException(status_code=404, detail=f"Invoice {invoice_id} not found")
+
     doc = await db[INVOICES].find_one_and_update(
         {"_id": invoice_id}, {"$set": changes}, return_document=ReturnDocument.AFTER
     )
-    if doc is None:
-        raise HTTPException(status_code=404, detail=f"Invoice {invoice_id} not found")
 
     if "status" in changes:
         await db[CUSTOMERS].update_one(
             {"_id": doc["customerId"], "invoices.id": invoice_id},
             {"$set": {"invoices.$.status": changes["status"]}},
         )
+
+    # Paying by cash after a payment link was already sent — cancel the link so the
+    # customer can't also pay online for the same invoice.
+    if changes.get("status") == "Paid" and existing.get("paymentLinkStatus") == "ACTIVE":
+        try:
+            await cashfree.cancel_payment_link(existing["paymentLinkId"])
+        except cashfree.CashfreeError:
+            pass
+        await db[INVOICES].update_one({"_id": invoice_id}, {"$set": {"paymentLinkStatus": "CANCELLED"}})
+        doc["paymentLinkStatus"] = "CANCELLED"
+
     return serialize(doc)
 
 

@@ -33,7 +33,12 @@ export const api = {
   customers: crud('customers'),
   devices: crud('devices'),
   technicians: crud('technicians'),
-  invoices: crud('invoices'),
+
+  invoices: {
+    ...crud('invoices'),
+    createPaymentLink: (id, body) => request(`/invoices/${id}/payment-link`, { method: 'POST', body }),
+    syncPaymentLink: (id) => request(`/invoices/${id}/payment-link/sync`, { method: 'POST' }),
+  },
 
   repairJobs: {
     ...crud('repair-jobs'),

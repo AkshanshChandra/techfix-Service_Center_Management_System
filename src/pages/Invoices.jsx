@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Download, Printer, FileText, Filter } from 'lucide-react';
+import { Search, Download, Printer, FileText, Link2, RefreshCw, Copy, IndianRupee } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import AsyncState from '../components/AsyncState';
 import Modal from '../components/Modal';
@@ -10,18 +10,25 @@ import { api } from '../api/client';
 import { useApi } from '../hooks/useApi';
 import { useOutletContext } from 'react-router-dom';
 
-const paymentMethodIcons = { UPI: '📱', Cash: '💵', Card: '💳', Pending: '⏳' };
+const paymentMethodIcons = { UPI: '📱', Cash: '💵', Card: '💳', Pending: '⏳', 'Online (Cashfree)': '🔗' };
 
 export default function Invoices() {
   const { addToast } = useOutletContext();
   const { data, loading, error, reload } = useApi(() => api.invoices.list(), []);
   const { data: jobs } = useApi(() => api.repairJobs.list(), []);
+  const { data: customers } = useApi(() => api.customers.list(), []);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [showCreate, setShowCreate] = useState(false);
   const [jobId, setJobId] = useState('');
   const [amount, setAmount] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const [linkInvoice, setLinkInvoice] = useState(null);
+  const [linkEmail, setLinkEmail] = useState('');
+  const [linkPhone, setLinkPhone] = useState('');
+  const [sendingLink, setSendingLink] = useState(false);
+  const [syncingId, setSyncingId] = useState(null);
 
   const statuses = ['All', 'Paid', 'Pending', 'Overdue'];
 
@@ -37,13 +44,80 @@ export default function Invoices() {
   const totalRevenue = invoices.filter(i => i.status === 'Paid').reduce((s, i) => s + i.total, 0);
   const pendingRevenue = invoices.filter(i => i.status === 'Pending').reduce((s, i) => s + i.total, 0);
 
-  const markPaid = async (id) => {
+  const activeLinkIds = invoices.filter(i => i.paymentLinkStatus === 'ACTIVE').map(i => i.id);
+  const activeLinkIdsKey = activeLinkIds.join(',');
+  const reloadRef = useRef(reload);
+  reloadRef.current = reload;
+
+  // While any invoice has a payment link out, poll Cashfree so the portal reflects
+  // payment without needing a public webhook URL during local development.
+  useEffect(() => {
+    if (activeLinkIds.length === 0) return undefined;
+    const interval = setInterval(async () => {
+      const results = await Promise.all(
+        activeLinkIds.map((id) => api.invoices.syncPaymentLink(id).catch(() => null))
+      );
+      if (results.some((r) => r?.status === 'Paid')) reloadRef.current();
+    }, 12000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeLinkIdsKey]);
+
+  const markPaidCash = async (id) => {
     try {
-      await api.invoices.update(id, { status: 'Paid', method: 'UPI' });
+      await api.invoices.update(id, { status: 'Paid', method: 'Cash' });
       reload();
-      addToast(`${id} marked as paid`, 'success');
+      addToast(`${id} marked as paid (cash)`, 'success');
     } catch (err) {
       addToast(err.message, 'error');
+    }
+  };
+
+  const openSendLink = (inv) => {
+    const customer = (customers || []).find((c) => c.id === inv.customerId);
+    setLinkInvoice(inv);
+    setLinkEmail(customer?.email || '');
+    setLinkPhone(customer?.phone || '');
+  };
+
+  const handleSendLink = async () => {
+    if (!linkEmail) {
+      addToast('Customer email is required to send a payment link', 'error');
+      return;
+    }
+    setSendingLink(true);
+    try {
+      await api.invoices.createPaymentLink(linkInvoice.id, { email: linkEmail, phone: linkPhone });
+      setLinkInvoice(null);
+      reload();
+      addToast(`Payment link sent to ${linkEmail}`, 'success');
+    } catch (err) {
+      addToast(err.message, 'error');
+    } finally {
+      setSendingLink(false);
+    }
+  };
+
+  const syncLink = async (inv) => {
+    setSyncingId(inv.id);
+    try {
+      const updated = await api.invoices.syncPaymentLink(inv.id);
+      reload();
+      if (updated.status === 'Paid') addToast(`${inv.id} paid online — invoice updated`, 'success');
+      else addToast('Still waiting on payment', 'info');
+    } catch (err) {
+      addToast(err.message, 'error');
+    } finally {
+      setSyncingId(null);
+    }
+  };
+
+  const copyLink = async (url) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      addToast('Payment link copied', 'success');
+    } catch {
+      addToast('Could not copy — select and copy the link manually', 'error');
     }
   };
 
@@ -207,16 +281,48 @@ export default function Invoices() {
               </div>
             </div>
 
+            {/* Payment actions */}
+            {inv.status !== 'Paid' && (
+              <div className="space-y-2 mb-2">
+                {inv.paymentLinkStatus === 'ACTIVE' ? (
+                  <div className="rounded-xl border border-primary-200 dark:border-primary-800 bg-primary-50 dark:bg-primary-900/20 p-2.5 text-xs">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-semibold text-primary-700 dark:text-primary-300">Payment link sent</span>
+                      <button
+                        onClick={() => syncLink(inv)}
+                        disabled={syncingId === inv.id}
+                        className="flex items-center gap-1 text-primary-600 dark:text-primary-400 hover:underline disabled:opacity-50"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${syncingId === inv.id ? 'animate-spin' : ''}`} /> Check status
+                      </button>
+                    </div>
+                    <p className="text-primary-600 dark:text-primary-400 truncate">{inv.customerEmail}</p>
+                    <button
+                      onClick={() => copyLink(inv.paymentLinkUrl)}
+                      className="mt-1 flex items-center gap-1 text-primary-600 dark:text-primary-400 hover:underline"
+                    >
+                      <Copy className="w-3 h-3" /> Copy link
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => openSendLink(inv)}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 border border-primary-200 dark:border-primary-800 text-primary-600 dark:text-primary-400 text-xs font-semibold rounded-xl hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-colors"
+                  >
+                    <Link2 className="w-3.5 h-3.5" /> Send Payment Link
+                  </button>
+                )}
+                <button
+                  onClick={() => markPaidCash(inv.id)}
+                  className="w-full flex items-center justify-center gap-1.5 py-2 bg-green-600 text-white text-xs font-semibold rounded-xl hover:bg-green-700 transition-colors"
+                >
+                  <IndianRupee className="w-3.5 h-3.5" /> Mark Paid (Cash)
+                </button>
+              </div>
+            )}
+
             {/* Actions */}
             <div className="flex gap-2">
-              {inv.status !== 'Paid' && (
-                <button
-                  onClick={() => markPaid(inv.id)}
-                  className="flex-1 py-2 bg-green-600 text-white text-xs font-semibold rounded-xl hover:bg-green-700 transition-colors"
-                >
-                  Mark Paid
-                </button>
-              )}
               <button
                 onClick={() => { downloadInvoicePdf(inv); addToast('Invoice PDF downloaded', 'success'); }}
                 className="flex-1 flex items-center justify-center gap-1.5 py-2 border border-secondary-200 dark:border-secondary-700 text-secondary-600 dark:text-secondary-400 text-xs font-medium rounded-xl hover:bg-secondary-50 dark:hover:bg-secondary-700/50 transition-colors"
@@ -271,6 +377,37 @@ export default function Invoices() {
               className="flex-1 py-2.5 bg-gradient-to-r from-primary-600 to-primary-700 text-white text-sm font-semibold rounded-xl hover:shadow-glow transition-all disabled:opacity-60"
             >
               {saving ? 'Creating...' : 'Create Invoice'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Send Payment Link Modal */}
+      <Modal isOpen={!!linkInvoice} onClose={() => setLinkInvoice(null)} title="Send Payment Link">
+        <div className="p-6 space-y-4">
+          {linkInvoice && (
+            <div className="rounded-xl bg-secondary-50 dark:bg-secondary-700/50 p-3 text-sm">
+              <p className="font-semibold text-secondary-900 dark:text-white">{linkInvoice.id} · {linkInvoice.customer}</p>
+              <p className="text-secondary-500 dark:text-secondary-400 mt-0.5">{formatCurrency(linkInvoice.total)} due {formatDate(linkInvoice.dueDate)}</p>
+            </div>
+          )}
+          <div>
+            <label className="block text-xs font-semibold text-secondary-700 dark:text-secondary-300 mb-1.5">Customer Email</label>
+            <input type="email" value={linkEmail} onChange={e => setLinkEmail(e.target.value)} placeholder="customer@email.com" className={inputClass} />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-secondary-700 dark:text-secondary-300 mb-1.5">Phone (for Cashfree records)</label>
+            <input type="tel" value={linkPhone} onChange={e => setLinkPhone(e.target.value)} placeholder="+91 98765 43210" className={inputClass} />
+          </div>
+          <p className="text-xs text-secondary-400">Cashfree emails the customer a secure payment link. This invoice updates to Paid automatically once they complete it.</p>
+          <div className="flex gap-3 pt-2">
+            <button onClick={() => setLinkInvoice(null)} className="flex-1 py-2.5 border border-secondary-200 dark:border-secondary-700 text-secondary-700 dark:text-secondary-300 text-sm font-medium rounded-xl hover:bg-secondary-50 transition-colors">Cancel</button>
+            <button
+              onClick={handleSendLink}
+              disabled={sendingLink}
+              className="flex-1 py-2.5 bg-gradient-to-r from-primary-600 to-primary-700 text-white text-sm font-semibold rounded-xl hover:shadow-glow transition-all disabled:opacity-60"
+            >
+              {sendingLink ? 'Sending...' : 'Send Link'}
             </button>
           </div>
         </div>

@@ -32,3 +32,13 @@ class Invoice(InvoiceBase):
     id: str
     tax: float
     total: float
+    paymentLinkId: str | None = None
+    paymentLinkUrl: str | None = None
+    paymentLinkStatus: str | None = None
+    customerEmail: str | None = None
+    customerPhone: str | None = None
+
+
+class PaymentLinkRequest(BaseModel):
+    email: str
+    phone: str | None = None

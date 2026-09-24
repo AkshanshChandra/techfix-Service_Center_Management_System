@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
 from .database import connect, disconnect, get_db
-from .routers import customers, dashboard, devices, inventory, invoices, repair_jobs, technicians
+from .routers import customers, dashboard, devices, inventory, invoices, payments, repair_jobs, technicians
 
 
 @asynccontextmanager
@@ -30,7 +30,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-for module in (customers, devices, repair_jobs, technicians, inventory, invoices, dashboard):
+for module in (customers, devices, repair_jobs, technicians, inventory, invoices, payments, dashboard):
     app.include_router(module.router)
 
 
